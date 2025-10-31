@@ -1,175 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>ClassicCraft World</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: black;
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    @import url('https://fonts.googleapis.com/css2?family=Minecraftia&display=swap');
-    #lockMessage {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-family: 'Minecraftia', monospace;
-      color: white;
-      font-size: 22px;
-      background: rgba(0,0,0,0.5);
-      padding: 10px 20px;
-      border-radius: 10px;
-    }
-  </style>
-  <script src="https://cdn.babylonjs.com/babylon.js"></script>
-</head>
-<body>
-  <canvas id="renderCanvas"></canvas>
-  <div id="lockMessage">Click to enter the world</div>
+// Cube setup
+const box = BABYLON.MeshBuilder.CreateBox("box", { size: 5 }, scene);
+box.checkCollisions = true;
 
-  <script>
-    const canvas = document.getElementById("renderCanvas");
-    const engine = new BABYLON.Engine(canvas, true);
-    const lockMessage = document.getElementById("lockMessage");
+// Correct texture assignment
+const topTex = new BABYLON.Texture("data:image/jpeg;base64,<your real top texture>", scene);
+const sideTex = new BABYLON.Texture("data:image/jpeg;base64,<your real side texture>", scene);
+const bottomTex = new BABYLON.Texture("data:image/jpeg;base64,<your real bottom texture>", scene);
 
-    const createScene = () => {
-      const scene = new BABYLON.Scene(engine);
-      scene.clearColor = new BABYLON.Color3(0.6, 0.8, 1.0);
-      scene.gravity = new BABYLON.Vector3(0, -0.2, 0);
-      scene.collisionsEnabled = true;
+const boxMat = new BABYLON.StandardMaterial("boxMat", scene);
+box.material = boxMat;
 
-      const camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 5, -10), scene);
-      camera.attachControl(canvas, true);
-      camera.checkCollisions = true;
-      camera.applyGravity = true;
-      camera.ellipsoid = new BABYLON.Vector3(1, 1.8, 1);
-      camera.speed = 0.5;
+// Fix: make sure each texture goes to the correct face
+boxMat.diffuseTexture = sideTex; // default side
+boxMat.diffuseTexture.hasAlpha = false;
 
-      const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-      light.intensity = 1.2;
+// Manually assign correct faces
+const faceUV = [];
+faceUV[0] = new BABYLON.Vector4(0, 0, 1, 1); // Right
+faceUV[1] = new BABYLON.Vector4(0, 0, 1, 1); // Left
+faceUV[2] = new BABYLON.Vector4(0, 0, 1, 1); // Top
+faceUV[3] = new BABYLON.Vector4(0, 0, 1, 1); // Bottom
+faceUV[4] = new BABYLON.Vector4(0, 0, 1, 1); // Front
+faceUV[5] = new BABYLON.Vector4(0, 0, 1, 1); // Back
 
-      // Base64 textures (replace "EMPTY" with your base64 data)
-      const topTex = new BABYLON.Texture("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIAJQAnQMBIgACEQEDEQH/xAAZAAADAQEBAAAAAAAAAAAAAAABAgMEAAX/xAAtEAACAQMCBAUEAgMAAAAAAAAAAQIDESESMRMyQVEiUmFxoQQzgZEUI0Jiwf/EABkBAQEBAAMAAAAAAAAAAAAAAAEAAgMEBf/EABsRAQEBAQEAAwAAAAAAAAAAAAABESExAhJh/9oADAMBAAIRAxEAPwC/Da7E5JqTL64+ZEppuTaTaPCjpqfTuyl7j1fHGy7k6SaTvgdtdyzrOpQpvVFtrc0WJqUbrKKa4eZBerRUkuhOpmV/QN7gluEZxKosIWHOh6mUrCwVpJvBtuVdCfx5dGg6o90XTRm3BULaMPcEqihvcapzsjV3QmG1qr4Emr9wcCXRoWjiabwaFON+ZfsvEj/Hl3iUi9EVB7orqXdEZRbk2k7MrdWhODqu8WsYyLwJd4lYJpWaGLUyF6dtCKWXZfonLDdglZlMxJ8o9PZ3OqLwjpxEA6WR7Lsg0yDHlQJbjpKws9yZIxZbFYbjNK2yHTrL1NkdkRsuyLFeq3U58xOp0GnzCSEQiD1Q8ErlGlZ4Wxa0BWPKjz7vu/2Nql3f7C/EfVtluAlQbcXd3yUDxeJcSR2pvLO0eoLWwaw8HW47HOo5KwLXBJaVcgKbuihCLvJL1NOgqATYJO7A5JO1horUr7GFC3a2DrbwdONkInbItKWF4kgcX/UfgvzfAxYRu7yLI6b0ScWsoVyuKUo5qJMu4qzM1KWmaZZ1VZ4ZlIcKPb5EcUhlUXYVyu9hMaPporQ/ctpRL6V/1v3LXMX1i3qAkk2ygptoIRZ1WEtOxSnswz5S0frNGElJNqyTuzTxafnROXK/YzitVk023crRfg/JBbFqPJ+TNJqrwiTTew9XZCx5kMJNEuxpVSFl4siroR6ktGrCU5uUVdMVUp+Vmij9tDh9sFrLw5RzJWQXs/YtV+2yD/4MuqdRHVObSajdMQ20vtx9hpTotUo6amG3cpxafmRD6rnXsRt6GcZwxro/biYy9OTUErifktPdCkqlSV1ZixqSbyyU8WkvC/Yz7lNTeAWQ6NKaPpuT8krIKlKGIuxmmK1uVE4c6O1SlzO4JPSrrci0nnPd56leNU83wTa6msC1H7aHuSg7RsitPN7ki1ORkUzW4JrKF4VO2xaNR/BaHIjPdloN6UFarp73FKxipLK6jaI9kWs4n/FXm+BH/W9G9jTxI92QqRlKbklhmYk2tfoNTp3lzHPwc3UNOcVLLNE3Btm/wCxTXF4TywcNkK5U8biThpe5dJpZJ1V4vwZ3pLSjdvNhp0vA/ECElB3k8DSqQktMXl+gpn4f+x3D9SrixR1DGnjcaK0X63AppIOtMOo6YegikrjakQS4C83wB+Ftdi5CovHL3E7K5VtCxG4f5L8vyJwpy2WPc7gVPL8jwnuu5RWtuYysOVBYMwa+XG3YSCeotA6pygtLB+Je5puY48y9zQFiUJ1X4gk6nMCwtTZC0+dAnsvcEeZHImoh1GIlAcKJiyLDF01fcZNd0ZUFBisbbruv2TlmTaM/U2Ul/VH2C8Zx1Lb8jgYAOsJqoxTpRuhOBHuykXoio72NW61sCp4WrYJybaHqeJonPCuUZdHmXuXMsZeJe5ouFaI5Su8sRttluEnlsWVNJ7stgRmdC+pFY0lLqdKioRc08pXHU7oCyE4j7IZSZAst8CyNEKSnFSb3Ol9PHuw1I0EpVEmro0unCz8K2Ep0VCd02Waw/UtTzyqnJJWk0NwF3+BlRVt2athqfEn5mdrn5mPKkl1YOGu7Mo/EQ6WpXRDTLyv9GmkmqcblaCODEqUpOPT9l2BtEmZUZJp4wUHezJitHjwjh3uuwU1VWqO3qZpRlqeGaPplam74zsWQ+muqeZbC1KkZQaV8hrcqItMpiTsV0S6CWa6F1sKdGtGnHTK912HjNVOXp3MtTnaLfS/5fgLOJbbLBrVgz2J2Mh1x1sS1R7r9lFJW3Q4aWbyLcaeXjsLZgYsMccDJKm6FsccbLmsCHHAqIUE4gEhGccMAblehxxUxmrfcZX6X/L8HHFSuc+V+wDiEYkWjyo44a0pDYYBxlP/Z", scene);
-      const sideTex = new BABYLON.Texture("data:image/jpeg;base64,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", scene);
-      const bottomTex = new BABYLON.Texture("data:image/jpeg;base64,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", scene);
+// Assign top and bottom manually
+const multimat = new BABYLON.MultiMaterial("multi", scene);
+const sideMat = new BABYLON.StandardMaterial("side", scene);
+sideMat.diffuseTexture = sideTex;
 
-      // Function to create a grass block
-      function createGrassBlock(x, y, z) {
-        const box = BABYLON.MeshBuilder.CreateBox("block", { size: 1 }, scene);
-        box.position.set(x, y, z);
-        box.checkCollisions = true;
+const topMat = new BABYLON.StandardMaterial("top", scene);
+topMat.diffuseTexture = topTex;
 
-        const mat = new BABYLON.StandardMaterial("mat" + x + y + z, scene);
-        mat.diffuseTexture = new BABYLON.DynamicTexture("dynTex" + x + y + z, {width: 512, height: 512}, scene);
-        const ctx = mat.diffuseTexture.getContext();
+const bottomMat = new BABYLON.StandardMaterial("bottom", scene);
+bottomMat.diffuseTexture = bottomTex;
 
-        // Simulate separate face textures
-        const faceMaterials = [
-          topTex,    // top
-          bottomTex, // bottom
-          sideTex,   // front
-          sideTex,   // back
-          sideTex,   // left
-          sideTex    // right
-        ];
+multimat.subMaterials.push(sideMat);   // 0
+multimat.subMaterials.push(topMat);    // 1
+multimat.subMaterials.push(bottomMat); // 2
 
-        box.subMeshes = [];
-        const verticesCount = box.getTotalVertices();
-        const indices = box.getIndices();
+box.material = multimat;
 
-        // Assign per-face material using MultiMaterial
-        const multiMat = new BABYLON.MultiMaterial("multi" + x + y + z, scene);
-        multiMat.subMaterials.push(
-          new BABYLON.StandardMaterial("top", scene),
-          new BABYLON.StandardMaterial("bottom", scene),
-          new BABYLON.StandardMaterial("side", scene),
-          new BABYLON.StandardMaterial("side2", scene),
-          new BABYLON.StandardMaterial("side3", scene),
-          new BABYLON.StandardMaterial("side4", scene)
-        );
+// Assign material indices for each face
+box.subMeshes = [];
+const verticesCount = box.getTotalVertices();
 
-        multiMat.subMaterials[0].diffuseTexture = topTex;
-        multiMat.subMaterials[1].diffuseTexture = bottomTex;
-        multiMat.subMaterials[2].diffuseTexture = sideTex;
-        multiMat.subMaterials[3].diffuseTexture = sideTex;
-        multiMat.subMaterials[4].diffuseTexture = sideTex;
-        multiMat.subMaterials[5].diffuseTexture = sideTex;
-
-        box.material = multiMat;
-
-        BABYLON.SubMesh.AddToMesh(0, 0, verticesCount, 0, indices.length / 6, box);
-        BABYLON.SubMesh.AddToMesh(1, 0, verticesCount, indices.length / 6, indices.length / 6, box);
-        BABYLON.SubMesh.AddToMesh(2, 0, verticesCount, (indices.length / 6) * 2, indices.length / 6, box);
-        BABYLON.SubMesh.AddToMesh(3, 0, verticesCount, (indices.length / 6) * 3, indices.length / 6, box);
-        BABYLON.SubMesh.AddToMesh(4, 0, verticesCount, (indices.length / 6) * 4, indices.length / 6, box);
-        BABYLON.SubMesh.AddToMesh(5, 0, verticesCount, (indices.length / 6) * 5, indices.length / 6, box);
-
-        return box;
-      }
-
-      // Generate flat terrain (10x10)
-      for (let x = -5; x < 5; x++) {
-        for (let z = -5; z < 5; z++) {
-          createGrassBlock(x, 0, z);
-        }
-      }
-
-      // Pointer lock
-      canvas.addEventListener("click", () => {
-        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
-        canvas.requestPointerLock();
-        lockMessage.style.display = "none";
-      });
-
-      // Movement controls
-      const keys = {};
-      window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-      window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
-
-      let canJump = true;
-      scene.onBeforeRenderObservable.add(() => {
-        const forward = new BABYLON.Vector3(
-          Math.sin(camera.rotation.y),
-          0,
-          Math.cos(camera.rotation.y)
-        );
-        const right = new BABYLON.Vector3(
-          Math.sin(camera.rotation.y + Math.PI / 2),
-          0,
-          Math.cos(camera.rotation.y + Math.PI / 2)
-        );
-
-        let move = BABYLON.Vector3.Zero();
-        if (keys["w"]) move.addInPlace(forward);
-        if (keys["s"]) move.subtractInPlace(forward);
-        if (keys["a"]) move.subtractInPlace(right);
-        if (keys["d"]) move.addInPlace(right);
-        move.normalize().scaleInPlace(camera.speed);
-        camera.cameraDirection.addInPlace(move);
-
-        if (keys[" "] && canJump) {
-          camera.cameraDirection.y += 1;
-          canJump = false;
-          setTimeout(() => canJump = true, 1000);
-        }
-      });
-
-      return scene;
-    };
-
-    const scene = createScene();
-    engine.runRenderLoop(() => scene.render());
-    window.addEventListener("resize", () => engine.resize());
-  </script>
-</body>
-</html>
+new BABYLON.SubMesh(0, 0, verticesCount, 0, 6, box);   // front
+new BABYLON.SubMesh(0, 0, verticesCount, 6, 6, box);   // back
+new BABYLON.SubMesh(1, 0, verticesCount, 12, 6, box);  // top
+new BABYLON.SubMesh(2, 0, verticesCount, 18, 6, box);  // bottom
+new BABYLON.SubMesh(0, 0, verticesCount, 24, 6, box);  // right
+new BABYLON.SubMesh(0, 0, verticesCount, 30, 6, box);  // left
